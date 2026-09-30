@@ -37,7 +37,7 @@ that exception.
 | [Roboto](https://fonts.google.com/specimen/Roboto) and [DejaVu Sans](https://dejavu-fonts.github.io/) | Apache-2.0 and DejaVu Fonts License (Bitstream Vera derivative), respectively | Shipped with Kivy and used for on-screen text. No additional font is added by this app. |
 
 Kivy, python-for-android, and their dependencies do not add any network,
-analytics, or telemetry behaviour, and none is added by this application. The
+analytics, or telemetry behavior, and none is added by this application. The
 Android app requests no permissions.
 
 ## Build and development only

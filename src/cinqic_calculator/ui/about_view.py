@@ -8,10 +8,10 @@ from .components import section_label
 
 _LINKS = {
     "Cinqic website": "https://cinqic.com",
-    "Source repository": "https://github.com/Cinqic/Cinqic-Calculator",
-    "License (Apache-2.0)": "https://github.com/Cinqic/Cinqic-Calculator/blob/main/LICENSE",
-    "Privacy information": "https://github.com/Cinqic/Cinqic-Calculator/blob/main/PRIVACY.md",
-    "Third-party notices": "https://github.com/Cinqic/Cinqic-Calculator/blob/main/THIRD_PARTY_NOTICES.md",
+    "Source repository": "https://github.com/Cinqic-Research/Cinqic-Calculator",
+    "License (Apache-2.0)": "https://github.com/Cinqic-Research/Cinqic-Calculator/blob/main/LICENSE",
+    "Privacy information": "https://github.com/Cinqic-Research/Cinqic-Calculator/blob/main/PRIVACY.md",
+    "Third-party notices": "https://github.com/Cinqic-Research/Cinqic-Calculator/blob/main/THIRD_PARTY_NOTICES.md",
 }
 
 
@@ -31,12 +31,10 @@ class AboutView(tk.Frame):
             "services, or artificial intelligence."
         )
 
-        section_label(self, "Part of the developing Juniper ecosystem", c).pack(anchor="w", padx=16, pady=(16, 4))
+        section_label(self, "Juniper", c).pack(anchor="w", padx=16, pady=(16, 4))
         self._paragraph(
-            "Juniper is Cinqic's lightweight, local-first artificial intelligence "
-            "assistant in development. Future versions of Cinqic Calculator may offer "
-            "optional local Juniper explanations while keeping the calculator fully "
-            "useful without AI."
+            "Juniper, Cinqic's local-first assistant, is a separate app. It is not "
+            "integrated into Cinqic Calculator, which works fully without AI."
         )
 
         section_label(self, "Product principle", c).pack(anchor="w", padx=16, pady=(16, 4))

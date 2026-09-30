@@ -17,7 +17,7 @@ Cinqic Calculator is designed to work entirely on your device.
     (`Context.getFilesDir()`-equivalent, via Kivy's `user_data_dir`)
 - Works fully offline. An internet connection is never required to use it.
   The Android app requests no internet permission at all.
-- Does **not** currently include Juniper or any other AI model. Juniper is
+- Does **not** include Juniper or any other AI model. Juniper is
   not integrated into Cinqic Calculator on any platform.
 
 ## Local data

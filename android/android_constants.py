@@ -23,6 +23,6 @@ PRIVACY_SUMMARY = (
 
 JUNIPER_RELATIONSHIP_TEXT = (
     "Juniper is not integrated into Cinqic Calculator. The calculator "
-    "works fully without AI. Juniper is Cinqic's future local-first "
-    "assistant."
+    "works fully without AI. Juniper is Cinqic's separate local-first "
+    "assistant app."
 )

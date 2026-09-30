@@ -29,13 +29,13 @@ without AI.** See [About Juniper](#juniper-relationship) below.
   feedback.
 - **A redesigned scientific mode** that slides up over the keypad as a grouped
   sheet, instead of expanding the screen into an endless grid of small keys.
-- **More maths:** parentheses, `x^y`, `Ans`, `eˣ`, `10ˣ`, inverse
+- **More math:** parentheses, `x^y`, `Ans`, `eˣ`, `10ˣ`, inverse
   trigonometry, and hyperbolic functions.
 - **Linux is a supported platform**, tested in CI and shipped as a standalone
   tarball.
 - **Relicensed under the Apache License 2.0.**
 
-See [CHANGELOG.md](CHANGELOG.md) for the full list, including one behaviour
+See [CHANGELOG.md](CHANGELOG.md) for the full list, including one behavior
 change worth knowing about.
 
 ## Features
@@ -55,11 +55,11 @@ change worth knowing about.
 - **Unit conversion** — length, mass, temperature, area, volume, speed, time,
   and data storage (decimal KB/MB/GB kept distinct from binary KiB/MiB/GiB).
 - **Financial tools** — percentages, discounts, sales tax, tips, bill
-  splitting, simple and compound interest — clearly labelled as estimates.
+  splitting, simple and compound interest — clearly labeled as estimates.
 - **Local calculation history** (up to 200 entries), fully optional.
 - **Accessibility** — reduced motion, keyboard navigation with visible focus,
   adaptive text sizing for long results, WCAG AA contrast in both themes, and
-  states never signalled by colour alone.
+  states never signaled by color alone.
 - **Optional haptics on Android**, using Android's built-in key-press feedback
   — which needs no permission, unlike the vibration APIs this app deliberately
   avoids.
@@ -75,7 +75,7 @@ contradict what you can see.
 ### Windows
 
 1. Download `Cinqic-Calculator-Windows-x64-Setup.exe` from the
-   [latest release](https://github.com/Cinqic/Cinqic-Calculator/releases/latest).
+   [1.1.0 desktop release](https://github.com/Cinqic-Research/Cinqic-Calculator/releases/tag/v1.1.0).
 2. Run the installer. Administrator privileges are not required.
 3. Launch **Cinqic Calculator** from the Start menu.
 
@@ -85,13 +85,13 @@ available — unzip it and run `CinqicCalculator.exe` directly.
 Requires Windows 10 or 11, 64-bit. Nothing else needs to be installed.
 
 **SmartScreen note:** this build is not code-signed, so Windows may show an
-"unrecognised app" warning the first time you run it. This is expected for an
+"unrecognized app" warning the first time you run it. This is expected for an
 unsigned open-source app; you can review the source yourself before continuing.
 
 ### Linux
 
 1. Download `Cinqic-Calculator-Linux-x86_64.tar.gz` from the
-   [latest release](https://github.com/Cinqic/Cinqic-Calculator/releases/latest).
+   [1.1.0 desktop release](https://github.com/Cinqic-Research/Cinqic-Calculator/releases/tag/v1.1.0).
 2. Extract it and run the launcher:
 
 ```bash
@@ -115,7 +115,7 @@ package — `python3-tk` on Debian/Ubuntu, `python3-tkinter` on Fedora — becau
 ### Android
 
 Download `Cinqic-Calculator-Android.apk` from the
-[latest Android release](https://github.com/Cinqic/Cinqic-Calculator/releases?q=android)
+[1.1.0 Android release](https://github.com/Cinqic-Research/Cinqic-Calculator/releases/tag/android-v1.1.0)
 and open it. Android will ask you to allow "install unknown apps" for whichever
 app you used to open the file — a normal requirement for any app installed
 outside the Play Store.
@@ -140,7 +140,7 @@ exactly where that data lives on each platform.
 ## Build from source
 
 ```bash
-git clone https://github.com/Cinqic/Cinqic-Calculator.git
+git clone https://github.com/Cinqic-Research/Cinqic-Calculator.git
 cd Cinqic-Calculator
 python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
@@ -232,9 +232,8 @@ emulator.
 ## Juniper relationship
 
 Cinqic Calculator is useful entirely on its own, without AI. Juniper —
-Cinqic's local-first assistant — is **not** integrated into this release, on
-any platform. Future versions may add optional local Juniper explanations,
-while the calculator keeps working fully without them.
+Cinqic's local-first assistant — is a separate app and is **not** integrated
+into Cinqic Calculator on any platform.
 
 > AI should remain a choice.
 
