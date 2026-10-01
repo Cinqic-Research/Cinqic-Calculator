@@ -10,8 +10,11 @@ maintained on a best-effort basis; there is no commercial support commitment.
 
 ## Security boundaries
 
-Cinqic Calculator has no network client, server, account, or background
-service. Its realistic attack surface is small:
+Cinqic Calculator itself makes no network requests, runs no server, creates no
+account, and runs no background network service. On desktop, clicking a link
+in About opens that page in the system browser. Calculation, history, and
+settings stay in the app; they are not transmitted. Its realistic attack
+surface is small:
 
 - **Expression evaluation.** `src/cinqic_calculator/evaluator.py` parses input
   with Python's `ast` module and evaluates only an explicit allowlist of node
