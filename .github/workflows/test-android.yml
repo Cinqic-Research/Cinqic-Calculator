@@ -293,10 +293,23 @@ jobs:
           echo "--- cold launch ---"
           adb logcat -c
           adb shell am start -n "$ACTIVITY"
-          sleep 20
-          adb shell pidof "$PKG"
+          # A cold first launch unpacks the Python bundle; on a loaded hosted
+          # runner that can take longer than a fixed 20 s. Poll for the process
+          # (up to 60 s), then keep it for 20 s more, and always save logcat
+          # first so a failure shows why instead of only "pidof" exiting 1.
+          launched=0
+          for _ in $(seq 1 60); do
+            if adb shell pidof "$PKG" >/dev/null 2>&1; then launched=1; break; fi
+            sleep 1
+          done
+          if [ "$launched" = 1 ]; then sleep 20; fi
           adb logcat -d > /tmp/logcat-launch.txt
           fail_on_crash /tmp/logcat-launch.txt
+          if ! adb shell pidof "$PKG"; then
+            echo "App process is not running after cold launch" >&2
+            grep -E " python |ActivityManager|AndroidRuntime" /tmp/logcat-launch.txt | tail -60 >&2 || true
+            exit 1
+          fi
 
           echo "--- drive real input through the hardware-key path ---"
           # A mix of typed text, hardware key events, and real taps on the
