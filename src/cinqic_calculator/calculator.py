@@ -86,13 +86,13 @@ class Calculator:
 
     @property
     def plain_display(self) -> str:
-        """The display as a machine-readable string (ASCII "-", no U+2212).
+        """The display as a machine-readable string (ASCII "-", no commas).
 
         :attr:`display` is for the screen; this is what gets copied to the
-        clipboard or written to history, where a typographic minus would
+        clipboard or written to history, where display punctuation would
         produce a value that cannot be parsed back in.
         """
-        text = self.display
+        text = self.display.replace(",", "")
         return "-" + text[1:] if text.startswith("\u2212") else text
 
     @property
@@ -321,7 +321,7 @@ class Calculator:
         preview = self.preview()
         if preview.is_answer and preview.value is not None:
             return preview.value
-        return _safe_float(self.display)
+        return _safe_float(self.plain_display)
 
     def memory_clear(self) -> None:
         self.memory = None

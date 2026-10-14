@@ -82,7 +82,7 @@ def test_expression_and_preview_labels_are_wired_to_real_state(app_window):
     app_window.update()
     assert view.expr_var.get() == "125 \u00d7 24"
     assert view.display_var.get() == "24"
-    assert view.preview_var.get() == "= 3000"
+    assert view.preview_var.get() == "= 3,000"
 
 
 def test_preview_clears_once_the_result_is_committed(app_window):
@@ -383,3 +383,29 @@ def test_typing_a_long_expression_stays_responsive(app_window):
     elapsed = time.perf_counter() - started
 
     assert elapsed < 3.0, f"160 key presses took {elapsed:.2f}s"
+
+
+def test_grouped_result_copy_history_and_reuse(app_window):
+    app_window.show_view("Calculator")
+    view = app_window.views["Calculator"]
+    view.calc.clear_all()
+    app_window.history.clear()
+    for key in ("1", "2", "3", "4", ".", "5", "+", "2", "0", "0", "0", "="):
+        view._on_key(key)
+    app_window.update()
+    assert view.display_var.get() == "3,234.5"
+    view.copy_result()
+    assert view.clipboard_get() == "3234.5"
+    assert app_window.history.entries[0]["result"] == "3234.5"
+
+    # Older, ungrouped history results receive the same display formatting.
+    app_window.history.add("5000 - 1", "4999", "2026-01-01T00:00:00")
+    history_view = app_window.views["History"]
+    history_view.refresh()
+    assert history_view.tree.item("1", "values")[1] == "4,999"
+    assert history_view.tree.item("0", "values")[1] == "3,234.5"
+    history_view.tree.selection_set("0")
+    history_view._copy_selected()
+    assert history_view.clipboard_get() == "3234.5"
+    history_view._reuse_selected()
+    assert view.display_var.get() == "3,234.5"

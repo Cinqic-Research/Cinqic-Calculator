@@ -97,7 +97,7 @@ def test_preview_shows_answer_before_equals():
     model = build(*digits("125"), "*", *digits("24"))
     preview = model.preview()
     assert preview.state == PreviewState.OK
-    assert preview.text == "3000"
+    assert preview.text == "3,000"
 
 
 def test_preview_respects_operator_precedence():
@@ -307,3 +307,31 @@ def test_percent_leaves_the_operand_alone_when_the_result_overflows():
     model.apply_percent()
     assert model.tokens == ["1e308", "+", "99999"]
     assert model.preview().state == PreviewState.OK
+
+
+def test_grouped_expressions_compile_to_ungrouped_arithmetic():
+    model = build("fn:sqrt", *digits("1000000"), ")", "+", *digits("2000"))
+    assert model.render() == "√(1,000,000) + 2,000"
+    assert "," not in model.compile_source()
+    assert model.preview().value == 3000
+    assert model.preview().text == "3,000"
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("999", "999"),
+        ("1000", "1,000"),
+        ("1234567.8900", "1,234,567.8900"),
+        ("-1234567.89", "−1,234,567.89"),
+        ("1234.", "1,234."),
+        ("0.1234567", "0.1234567"),
+        ("1000.0", "1,000"),
+        ("1.234e-15", "1.234e-15"),
+        ("-1.234e20", "−1.234e20"),
+        ("1E+1000", "1E+1000"),
+        ("Error", "Error"),
+    ],
+)
+def test_grouping_preserves_fractional_digits_and_exponents(text, expected):
+    assert tidy_literal(text) == expected

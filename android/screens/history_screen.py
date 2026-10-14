@@ -14,6 +14,7 @@ from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.screenmanager import Screen
 
+from cinqic_calculator.expression import tidy_literal
 from logic import load_history_result
 
 
@@ -55,7 +56,7 @@ class HistoryScreen(Screen):
 
     def _build_row(self, index: int, entry: dict) -> BoxLayout:
         row = BoxLayout(size_hint_y=None, height="56dp", spacing="6dp")
-        summary = f"{entry['expression']} = {entry['result']}  ({entry['timestamp']})"
+        summary = f"{entry['expression']} = {tidy_literal(entry['result'])}  ({entry['timestamp']})"
         reuse_button = Button(text=summary)
         reuse_button.bind(on_release=lambda _btn, i=index: self.reuse_entry(i))
         delete_button = Button(text="Delete", size_hint_x=0.25)
