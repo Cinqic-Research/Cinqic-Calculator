@@ -431,3 +431,19 @@ def test_reusing_a_non_numeric_row_leaves_the_calculator_alone():
         calc.input_digit(digit)
     assert load_history_result(calc, "Error") is False
     assert calc.display == "123"
+
+
+def test_android_grouped_preview_and_history_reuse(tmp_path):
+    calc = Calculator()
+    calc.load_value(1234.5)
+    calc.push_operator("+")
+    for digit in "2000":
+        calc.input_digit(digit)
+    assert preview_line(calc.preview()) == "= 3,234.5"
+    calc.equals()
+    history = History(str(tmp_path / "history.json"))
+    record_history_entry(history, calc.last_expression, calc.plain_display)
+    stored = History(history.file_path).entries[0]
+    assert stored["result"] == "3234.5"
+    assert load_history_result(calc, stored["result"])
+    assert calc.display == "3,234.5"

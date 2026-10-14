@@ -3,6 +3,7 @@
 import tkinter as tk
 from tkinter import messagebox, ttk
 
+from ..expression import tidy_literal
 from .components import make_button, section_label
 
 
@@ -61,7 +62,7 @@ class HistoryView(tk.Frame):
         self.tree.delete(*self.tree.get_children())
         for index in reversed(range(len(self.history.entries))):
             entry = self.history.entries[index]
-            values = (entry["expression"], entry["result"], entry["timestamp"])
+            values = (entry["expression"], tidy_literal(entry["result"]), entry["timestamp"])
             self.tree.insert("", "end", iid=str(index), values=values)
 
     def _selected_index(self):

@@ -7,6 +7,14 @@ From 1.1.0 onwards, all platforms share one product version. Desktop releases
 separately and tagged `android-vX.Y.Z`. Before 1.1.0, Windows and Android were
 versioned independently.
 
+## Unreleased
+
+- Added comma thousands separators to entered numbers, expressions, live
+  previews, results, and history results on desktop and Android. For example,
+  `1234.56` is displayed as `1,234.56`. Fractional digits and scientific
+  notation stay intact; calculations, copied values, stored history results,
+  and calculator memory continue using ungrouped numeric values.
+
 ## 1.1.0
 
 ### Changed behaviour worth knowing about

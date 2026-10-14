@@ -502,7 +502,7 @@ class ExpressionModel:
             return Preview(PreviewState.ERROR, text=str(exc), code=exc.code)
 
         try:
-            text = format_number(value)
+            text = tidy_literal(format_number(value))
         except ValueError:
             return Preview(PreviewState.ERROR, text="Number too large", code=ErrorCode.OVERFLOW)
         return Preview(PreviewState.OK, value=value, text=text)
@@ -555,11 +555,22 @@ def tidy_literal(text: str) -> str:
     Trims a bare ".0" tail: percent and Ans store ``repr()`` so no precision
     is lost, but "200 + 20.0" reads worse than "200 + 20". Only the LEADING
     sign becomes a typographic minus -- blindly replacing every "-" would
-    also mangle an exponent like "1e-15".
+    also mangle an exponent like "1e-15". Group the integer part in threes
+    using commas, without converting through float (which could round an
+    entry), touching fractional digits, or grouping scientific notation.
     """
     if text.endswith(".0"):
         text = text[:-2]
-    return "\u2212" + text[1:] if text.startswith("-") else text
+    if text.startswith("-"):
+        text = "\u2212" + text[1:]
+    if "e" in text.lower():
+        return text
+    sign = text[:1] if text.startswith(("\u2212", "+")) else ""
+    integer, point, fraction = text[len(sign):].partition(".")
+    if integer.isascii() and integer.isdigit():
+        groups = [integer[max(0, end - 3):end] for end in range(len(integer), 0, -3)]
+        integer = ",".join(reversed(groups))
+    return sign + integer + point + fraction
 
 
 _render_number_text = tidy_literal

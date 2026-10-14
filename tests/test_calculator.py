@@ -63,7 +63,7 @@ def d(text):
         (("9", "-", "4", "="), "5"),
         (("6", "*", "7", "="), "42"),
         (("8", "/", "2", "="), "4"),
-        (("2", "**", "1", "0", "="), "1024"),
+        (("2", "**", "1", "0", "="), "1,024"),
     ],
 )
 def test_basic_arithmetic(presses, expected):
@@ -114,7 +114,7 @@ def test_live_preview_before_equals():
     calc = press(Calculator(), *d("125"), "*", *d("24"))
     preview = calc.preview()
     assert preview.state == PreviewState.OK
-    assert preview.text == "3000"
+    assert preview.text == "3,000"
     assert calc.display == "24", "the big display still shows what is being typed"
 
 
@@ -281,7 +281,7 @@ def test_square_root_of_a_negative_is_a_domain_error():
 
 def test_exponential_and_powers_of_ten():
     assert press(Calculator(), "fn:exp", "0", ")", "=").display == "1"
-    assert press(Calculator(), "1", "0", "**", "3", "=").display == "1000"
+    assert press(Calculator(), "1", "0", "**", "3", "=").display == "1,000"
 
 
 @pytest.mark.parametrize(("function", "expected"), [("sin", "0.5"), ("cos", "0.5"), ("tan", "1")])
@@ -503,3 +503,71 @@ def test_display_after_an_error_then_an_operator_shows_the_last_answer():
     assert not calc.has_error
     assert calc.expression_text == "Ans +"
     assert calc.display == "42"
+
+
+# Thousands separators are presentation only: editing and arithmetic still
+# work with the original numbers, including memory and repeated equals.
+def test_grouping_updates_as_digits_are_entered_and_deleted():
+    calc = press(Calculator(), *d("999"))
+    assert calc.display == "999"
+    calc.input_digit("9")
+    assert calc.display == "9,999"
+    assert calc.expression_text == "9,999"
+    calc.backspace()
+    assert calc.display == "999"
+    press(calc, "9", ".", "5", "0")
+    assert calc.display == "9,999.50"
+    calc.toggle_sign()
+    assert calc.display == "−9,999.50"
+    assert calc.plain_display == "-9999.50"
+
+
+def test_grouped_amounts_preview_commit_repeat_and_continue():
+    calc = press(Calculator(), *d("1234.50"), "+", *d("2000.25"))
+    assert calc.expression_text == "1,234.50 + 2,000.25"
+    assert calc.preview().text == "3,234.75"
+    calc.equals()
+    assert calc.display == "3,234.75"
+    assert calc.plain_display == "3234.75"
+    assert calc.ans == pytest.approx(3234.75)
+    calc.equals()
+    assert calc.expression_text == "3,234.75 + 2,000.25 ="
+    assert calc.display == "5,235"
+    press(calc, "*", "2", "=")
+    assert calc.display == "10,470"
+
+
+@pytest.mark.parametrize("negative", [False, True])
+def test_memory_accepts_grouped_entries_and_recall(negative):
+    calc = press(Calculator(), *d("1234.56"))
+    if negative:
+        calc.toggle_sign()
+    expected = -1234.56 if negative else 1234.56
+    calc.memory_store()
+    assert calc.memory == pytest.approx(expected)
+    calc.memory_add()
+    assert calc.memory == pytest.approx(2 * expected)
+    calc.memory_subtract()
+    assert calc.memory == pytest.approx(expected)
+    calc.clear_all()
+    calc.memory_recall()
+    assert calc.display == ("−1,234.56" if negative else "1,234.56")
+    calc.memory_clear()
+
+
+def test_grouped_last_operand_remains_visible_after_operator():
+    calc = press(Calculator(), *d("12345"), "+")
+    assert calc.display == "12,345"
+    assert calc.expression_text == "12,345 +"
+    calc.clear_all()
+    calc.model.set_ans(12345)
+    calc.push_ans()
+    assert calc.display == "12,345"
+
+
+def test_grouping_does_not_round_long_entries():
+    calc = press(Calculator(), *d("123456789012345"))
+    assert calc.display == "123,456,789,012,345"
+    assert calc.plain_display == "123456789012345"
+    calc.input_decimal()
+    assert calc.display == "123,456,789,012,345."
