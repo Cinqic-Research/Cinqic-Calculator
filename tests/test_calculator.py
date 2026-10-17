@@ -7,7 +7,7 @@ happen to hold them.
 
 import pytest
 
-from cinqic_calculator.calculator import Calculator
+from cinqic_calculator.calculator import Calculator, parse_number_text
 from cinqic_calculator.evaluator import ErrorCode
 from cinqic_calculator.expression import PreviewState
 
@@ -663,3 +663,83 @@ def test_cash_drawer_memory_accumulation_matches_the_one_line_total():
     assert calc.display == "981.07"
     press(calc, "-", *d("981.06"), "=")
     assert calc.display == "0.01", "over/short must not show 0.0100000000001"
+
+
+# ---------------------------------------------------------------------------
+# Pasting text that contains a grouped number
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    ("text", "value"),
+    [
+        ("1,234.56", 1234.56),
+        ("-1,234.56", -1234.56),
+        ("−1,234.56", -1234.56),  # the minus this app displays
+        ("1.23456789012e14", 1.23456789012e14),  # this app's own copied output
+        ("1.5e-7", 1.5e-7),
+        ("1,000.", 1000.0),
+        (".5", 0.5),
+        ("  981.07\n", 981.07),
+        ("Total: $1,234.56", 1234.56),
+        ("-$1,234.56", -1234.56),
+        ("(1,234.56)", -1234.56),
+        ("123456789012345", 123456789012345.0),
+    ],
+)
+def test_pasted_numbers_parse_exactly(text, value):
+    assert parse_number_text(text) == value
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "",
+        "abc",
+        "2026-10-16",  # three numbers, not one negative one
+        "1 234,56",  # decimal-comma locale: refuse rather than read 123456
+        "12,34",  # not a thousands grouping
+        "1234,567",
+        "1.2.3",
+        "5-",  # a minus outside the number must never be dropped
+        "-(5)",
+        "1e400",
+        "9" * 400,
+        "١٢٣",  # non-ASCII digits
+    ],
+)
+def test_ambiguous_or_unrepresentable_paste_is_refused(text):
+    assert parse_number_text(text) is None
+
+
+def test_paste_round_trips_every_copied_result():
+    for presses in (("1234.5", "+", "2000"), ("1", "-", "1234567.89"), ("1", "/", "3"), ("12345678", "*", "1234567")):
+        calc = Calculator()
+        for chunk in presses:
+            press(calc, *(d(chunk) if chunk[0].isdigit() else (chunk,)))
+        press(calc, "=")
+        copied = calc.plain_display
+        assert parse_number_text(calc.display) == parse_number_text(copied) == float(copied)
+        reloaded = Calculator()
+        assert reloaded.load_value(parse_number_text(copied))
+        assert reloaded.display == calc.display
+
+
+# ---------------------------------------------------------------------------
+# Values that cannot be displayed must not escape as exceptions
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize("value", [float("inf"), float("-inf"), float("nan")])
+def test_load_value_refuses_non_finite_values(value):
+    calc = press(Calculator(), *d("42"))
+    assert calc.load_value(value) is False
+    assert calc.display == "42"
+
+
+def test_memory_overflow_reports_an_error_instead_of_storing_infinity():
+    calc = Calculator()
+    calc.load_value(1.7e308)
+    calc.memory_store()
+    calc.memory_add()
+    assert calc.memory == 1.7e308, "memory keeps its last good value"
+    assert calc.has_error and calc.error_code == ErrorCode.OVERFLOW
+    calc.clear_all()
+    calc.memory_recall()
+    assert calc.display == "1.7e308"

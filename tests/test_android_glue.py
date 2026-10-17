@@ -469,3 +469,21 @@ def test_android_cash_drawer_preview_and_history(tmp_path):
     history = History(str(tmp_path / "history.json"))
     record_history_entry(history, calc.last_expression, calc.plain_display)
     assert History(history.file_path).entries[0]["result"] == "0.01"
+
+
+@pytest.mark.parametrize("stored", ["1e999", "-1e999", "nan", "inf"])
+def test_reusing_a_non_finite_history_row_leaves_the_calculator_alone(stored):
+    calc = Calculator()
+    calc.input_digit("7")
+    assert load_history_result(calc, stored) is False
+    assert calc.display == "7"
+
+
+@pytest.mark.parametrize("stored", [float("inf"), float("nan"), pytest.param(10**400, id="huge-int")])
+def test_non_finite_persisted_memory_is_not_restored(tmp_path, stored):
+    settings = Settings(str(tmp_path / "settings.json"))
+    settings.set("persist_memory", True)
+    settings.set("memory_value", stored)
+    calc = Calculator()
+    restore_persisted_memory(calc, settings)
+    assert calc.memory is None

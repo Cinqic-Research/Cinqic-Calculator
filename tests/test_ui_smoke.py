@@ -409,3 +409,30 @@ def test_grouped_result_copy_history_and_reuse(app_window):
     assert history_view.clipboard_get() == "3234.5"
     history_view._reuse_selected()
     assert view.display_var.get() == "3,234.5"
+
+
+@pytest.mark.parametrize(
+    ("clipboard", "display"),
+    [("−1,234.56", "−1,234.56"), ("1.23456789012e14", "1.23456789012e14"), ("Total: $981.07", "981.07")],
+)
+def test_paste_keeps_sign_and_exponent(app_window, clipboard, display):
+    app_window.show_view("Calculator")
+    view = app_window.views["Calculator"]
+    view.calc.clear_all()
+    view.clipboard_clear()
+    view.clipboard_append(clipboard)
+    app_window._paste_shortcut()
+    app_window.update()
+    assert view.display_var.get() == display
+
+
+def test_ambiguous_paste_leaves_the_calculator_unchanged(app_window):
+    app_window.show_view("Calculator")
+    view = app_window.views["Calculator"]
+    view.calc.clear_all()
+    view._on_key("7")
+    view.clipboard_clear()
+    view.clipboard_append("2026-10-16")
+    app_window._paste_shortcut()
+    app_window.update()
+    assert view.display_var.get() == "7"

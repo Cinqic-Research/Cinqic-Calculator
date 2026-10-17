@@ -20,6 +20,9 @@ Display responsibilities are split deliberately:
 
 from __future__ import annotations
 
+import math
+import re
+
 from .evaluator import ErrorCode, EvaluationError, evaluate
 from .expression import ExpressionModel, Preview, PreviewState, format_number, group_digits, tidy_literal
 
@@ -309,10 +312,18 @@ class Calculator:
     def set_degree_mode(self, degrees: bool) -> None:
         self.degree_mode = bool(degrees)
 
-    def load_value(self, value: float) -> None:
-        """Replace the whole expression with a value (history reuse, MR)."""
+    def load_value(self, value: float) -> bool:
+        """Replace the whole expression with a value (history reuse, paste).
+
+        Returns False, leaving everything untouched, for a value that cannot
+        be displayed: an infinity or NaN read back from a hand-edited history
+        file used to raise straight out of a UI callback.
+        """
+        if not math.isfinite(value):
+            return False
         self.clear_all()
         self.model.entry = format_number(value)
+        return True
 
     def _current_value(self) -> float | None:
         """The number the display is showing, if it is a number at all."""
@@ -329,7 +340,7 @@ class Calculator:
         self.memory = None
 
     def memory_recall(self) -> None:
-        if self.memory is None:
+        if self.memory is None or not math.isfinite(self.memory):
             return
         self._prepare_input()
         self._continue_from_result()
@@ -339,20 +350,81 @@ class Calculator:
     def memory_store(self) -> None:
         value = self._current_value()
         if value is not None:
-            self.memory = value
+            self._set_memory(value)
 
     def memory_add(self) -> None:
         value = self._current_value()
         if value is not None:
-            self.memory = (self.memory or 0.0) + value
+            self._set_memory((self.memory or 0.0) + value)
 
     def memory_subtract(self) -> None:
         value = self._current_value()
         if value is not None:
-            self.memory = (self.memory or 0.0) - value
+            self._set_memory((self.memory or 0.0) - value)
+
+    def _set_memory(self, value: float) -> None:
+        """Store a memory value, reporting overflow instead of keeping inf.
+
+        M+ on two values near 1e308 produced float("inf"), which MR then
+        could not format -- an exception out of the button handler.
+        """
+        if not math.isfinite(value):
+            self._fail(self.expression_text, ErrorCode.OVERFLOW)
+            return
+        self.memory = value
 
 
 # ----------------------------------------------------------------------
+# One number, optionally signed, grouped with commas in threes, with a
+# fraction and/or an exponent. ASCII digits only.
+_NUMBER = r"[-+]?(?:\d(?:[\d,]*\d)?(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?"
+_NUMBER_RE = re.compile(_NUMBER, re.ASCII)
+_GROUPED_INTEGER_RE = re.compile(r"\d{1,3}(?:,\d{3})+|\d+", re.ASCII)
+_CURRENCY = "$\u20ac\u00a3\u00a5"  # $ € £ ¥
+_ACCOUNTING_NEGATIVE_RE = re.compile(r"\(\s*[" + _CURRENCY + r"]?\s*(" + _NUMBER + r")\s*\)", re.ASCII)
+
+
+def parse_number_text(text: str) -> float | None:
+    """Read one number out of pasted text, or None if that is ambiguous.
+
+    Accepts what this app displays and copies ("1,234.56", "−1,234.56",
+    "1.23456789012e14") plus surrounding labels or a currency symbol
+    ("Total: $1,234.56"). Returns None -- so the caller changes nothing --
+    rather than guess when the text holds more than one number ("2026-10-16",
+    "1 234,56"), separators that are not thousands groups ("12,34"), or a
+    value too large to represent. Keeping only digits, ".", and "-", as
+    paste used to, dropped a typographic minus (a sign flip) and the "e" of
+    an exponent ("1.5e14" became 1.514).
+    """
+    text = str(text).strip().replace("\u2212", "-")
+    negative = False
+    accounting = _ACCOUNTING_NEGATIVE_RE.fullmatch(text)
+    if accounting:
+        text, negative = accounting.group(1), True
+    # A currency symbol between the sign and the digits ("-$5") keeps its sign.
+    text = re.sub(r"([-+])\s*[" + _CURRENCY + r"]\s*", r"\1", text)
+    numbers = _NUMBER_RE.findall(text)
+    if len(numbers) != 1:
+        return None
+    token = numbers[0]
+    if text.count("-") != token.count("-"):
+        return None  # a minus outside the number ("5-", "-(5)"): never drop a sign
+    mantissa = re.split(r"[eE]", token)[0].lstrip("+-")
+    if not _GROUPED_INTEGER_RE.fullmatch(mantissa.partition(".")[0] or "0"):
+        return None
+    try:
+        value = float(token.replace(",", ""))
+    except ValueError:  # pragma: no cover - the pattern only admits floats
+        return None
+    if not math.isfinite(value):
+        return None
+    if negative:
+        if value < 0:
+            return None
+        value = -value
+    return value
+
+
 def _safe_float(text: str) -> float | None:
     try:
         return float(text)
