@@ -135,9 +135,32 @@ def _acos(x):
     return math.acos(x)
 
 
+# A double guarantees 15 significant decimal digits (DBL_DIG). When two nearly
+# equal amounts are subtracted, the binary representation error of the
+# operands -- below those 15 digits -- becomes the leading digits of the
+# result: 1500.37 - 1500.36 is 0.009999999999990905 in binary floating point,
+# which the 12-digit display showed as "0.00999999999999" instead of "0.01".
+# Rounding a sum or difference to 15 significant digits *of its larger
+# operand* removes that noise: the accumulated error is at most 2 ulp of
+# the larger operand, under half a unit in the 15th digit, so a result that
+# is exact to 15 digits always rounds back to itself. The cost is any digit
+# beyond the 15th (123456789012345 + 0.5 keeps 123456789012346), which the
+# 12-digit display never shows.
+_SUM_SIGNIFICANT_DIGITS = 15
+
+
+def _clean_sum(result, a, b):
+    if not isinstance(result, float) or result == 0 or not math.isfinite(result):
+        return result  # exact integer arithmetic, or an overflow handled later
+    scale = max(abs(a), abs(b))
+    if not scale or not math.isfinite(scale):
+        return result
+    return round(result, _SUM_SIGNIFICANT_DIGITS - 1 - math.floor(math.log10(scale)))
+
+
 _BIN_OPS = {
-    ast.Add: lambda a, b: a + b,
-    ast.Sub: lambda a, b: a - b,
+    ast.Add: lambda a, b: _clean_sum(a + b, a, b),
+    ast.Sub: lambda a, b: _clean_sum(a - b, a, b),
     ast.Mult: lambda a, b: a * b,
     ast.Div: _safe_div,
     ast.Mod: _safe_mod,

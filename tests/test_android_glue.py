@@ -447,3 +447,25 @@ def test_android_grouped_preview_and_history_reuse(tmp_path):
     assert stored["result"] == "3234.5"
     assert load_history_result(calc, stored["result"])
     assert calc.display == "3,234.5"
+
+
+def test_android_cash_drawer_preview_and_history(tmp_path):
+    calc = Calculator()
+    for index, (denomination, count) in enumerate((("20", "37"), ("0.25", "40"), ("0.01", "117"))):
+        if index:
+            calc.push_operator("+")
+        for key in denomination:
+            calc.input_decimal() if key == "." else calc.input_digit(key)
+        calc.push_operator("*")
+        for key in count:
+            calc.input_digit(key)
+    assert preview_line(calc.preview()) == "= 751.17"
+    calc.equals()
+    calc.push_operator("-")
+    for key in "751.16":
+        calc.input_decimal() if key == "." else calc.input_digit(key)
+    calc.equals()
+    assert calc.display == "0.01"
+    history = History(str(tmp_path / "history.json"))
+    record_history_entry(history, calc.last_expression, calc.plain_display)
+    assert History(history.file_path).entries[0]["result"] == "0.01"

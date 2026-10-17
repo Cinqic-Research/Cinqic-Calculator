@@ -610,3 +610,56 @@ def test_entry_decimal_zero_survives_sign_backspace_and_commit():
     press(calc, "AC", *d("10.0"), "+", *d("0.05"))
     assert calc.expression_text == "10 + 0.05", "a committed 10.0 may read as 10"
     assert calc.preview().text == "10.05"
+
+
+# ---------------------------------------------------------------------------
+# Closing a cash drawer: the workflow the 1.1.1 release was audited against
+# ---------------------------------------------------------------------------
+_DRAWER = (("20", "37"), ("10", "12"), ("5", "8"), ("1", "63"), ("0.25", "40"), (".10", "58"), ("0.05", "22"), ("0.01", "117"))
+
+
+def _type_drawer_count(calc):
+    for index, (denomination, count) in enumerate(_DRAWER):
+        if index:
+            press(calc, "+")
+        press(calc, *d(denomination), "*", *d(count))
+    return calc
+
+
+def test_cash_drawer_count_total_float_and_copy():
+    calc = _type_drawer_count(Calculator())
+    assert calc.expression_text == (
+        "20 × 37 + 10 × 12 + 5 × 8 + 1 × 63 + 0.25 × 40 + 0.10 × 58 + 0.05 × 22 + 0.01 × 117"
+    )
+    assert calc.preview().text == "981.07"
+    press(calc, "=")
+    assert calc.display == "981.07"
+    assert calc.plain_display == "981.07", "the copied total"
+    # Take out a 200 opening float, then the same again with repeated "=".
+    press(calc, "-", *d("200"), "=")
+    assert (calc.expression_text, calc.display) == ("981.07 − 200 =", "781.07")
+    press(calc, "=")
+    assert (calc.expression_text, calc.display) == ("781.07 − 200 =", "581.07")
+
+
+def test_cash_drawer_large_total_is_grouped_but_copied_plain():
+    calc = press(Calculator(), *d("1234.56"))
+    for _ in range(9):
+        press(calc, "+", *d("1234.56"))
+    assert calc.preview().text == "12,345.6"
+    press(calc, "=", "-", *d("12345.59"), "=")
+    assert calc.display == "0.01"
+    press(calc, "AC", *d("12345.6"), "-", *d("12345.61"), "=")
+    assert (calc.display, calc.plain_display) == ("−0.01", "-0.01")
+
+
+def test_cash_drawer_memory_accumulation_matches_the_one_line_total():
+    calc = Calculator()
+    for denomination, count in _DRAWER:
+        press(calc, *d(denomination), "*", *d(count), "=")
+        calc.memory_add()
+    press(calc, "AC")
+    calc.memory_recall()
+    assert calc.display == "981.07"
+    press(calc, "-", *d("981.06"), "=")
+    assert calc.display == "0.01", "over/short must not show 0.0100000000001"
