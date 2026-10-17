@@ -67,10 +67,16 @@ def test_buildozer_version_matches_android_constants(buildozer):
 
 
 def test_android_version_code_only_ever_increases():
-    """versionCode 1 shipped as Android 1.0.0; an upgrade needs a higher one."""
+    """versionCode 1 shipped as Android 1.0.0 and 2 as 1.1.0; an upgrade needs a higher one."""
     import android.android_constants as android_constants
 
-    assert android_constants.ANDROID_VERSION_CODE >= 2
+    assert android_constants.ANDROID_VERSION_CODE >= 3
+
+
+def test_changelog_leads_with_the_current_version():
+    """No "Unreleased" heading may sit above the version being shipped."""
+    first = re.search(r"^## (.+)$", read("CHANGELOG.md"), re.MULTILINE).group(1)
+    assert first.split()[0] == constants.APP_VERSION
 
 
 # ---------------------------------------------------------------------------
@@ -181,3 +187,9 @@ def test_release_notes_refuse_a_mismatched_tag_or_missing_section(tmp_path, plat
     module = _release_notes()
     with pytest.raises(module.ReleaseNotesError, match=re.escape(message)):
         module.build_notes(platform, tag, "Owner/Repo", _fake_tree(tmp_path, **tree))
+
+
+@pytest.mark.parametrize(("platform", "prefix"), [("desktop", "v"), ("android", "android-v")])
+def test_release_notes_build_for_the_current_version(platform, prefix):
+    notes = _release_notes().build_notes(platform, prefix + constants.APP_VERSION, "Cinqic-Research/Cinqic-Calculator")
+    assert "thousands separators" in notes
