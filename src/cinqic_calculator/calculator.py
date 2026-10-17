@@ -21,7 +21,7 @@ Display responsibilities are split deliberately:
 from __future__ import annotations
 
 from .evaluator import ErrorCode, EvaluationError, evaluate
-from .expression import ExpressionModel, Preview, PreviewState, format_number, tidy_literal
+from .expression import ExpressionModel, Preview, PreviewState, format_number, group_digits, tidy_literal
 
 _ERROR = "Error"
 
@@ -60,7 +60,9 @@ class Calculator:
         if self._result_text is not None:
             return _display_number(self._result_text)
         if self.model.entry is not None:
-            return _display_number(self.model.entry)
+            # Exactly what is being typed: "10.0" must not read "10" on the
+            # way to "10.05", or the decimal point appears to vanish.
+            return group_digits(self.model.entry)
         # No operand is being typed (the user just pressed an operator, say).
         # Keep showing the most recent number rather than blanking to 0, so
         # "125 x" still reads 125 on the big display. "Ans" resolves to its

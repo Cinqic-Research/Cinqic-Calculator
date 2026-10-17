@@ -29,6 +29,7 @@ from .evaluator import ALLOWED_FUNCTION_NAMES, ErrorCode, EvaluationError, evalu
 __all__ = [
     "ExpressionModel",
     "tidy_literal",
+    "group_digits",
     "Preview",
     "PreviewState",
     "format_number",
@@ -412,7 +413,9 @@ class ExpressionModel:
         for token in self.tokens:
             pieces.append(_render_token(token))
         if self.entry is not None:
-            pieces.append(_render_number_text(self.entry))
+            # The operand still being typed is shown exactly as typed (grouped,
+            # never trimmed), so "1,000.0" does not flash back to "1,000".
+            pieces.append(group_digits(self.entry))
         return _join_pieces(pieces).rstrip()
 
     def compile_source(self, close_open_parens: bool = False) -> str:
@@ -561,6 +564,16 @@ def tidy_literal(text: str) -> str:
     """
     if text.endswith(".0"):
         text = text[:-2]
+    return group_digits(text)
+
+
+def group_digits(text: str) -> str:
+    """Add the typographic minus and thousands separators, and nothing else.
+
+    Unlike :func:`tidy_literal` this never trims a ".0" tail, so it is the
+    right presentation for an operand that is still being typed: "10.0" must
+    stay on screen as "10.0" while the user is on the way to "10.05".
+    """
     if text.startswith("-"):
         text = "\u2212" + text[1:]
     if "e" in text.lower():

@@ -571,3 +571,42 @@ def test_grouping_does_not_round_long_entries():
     assert calc.plain_display == "123456789012345"
     calc.input_decimal()
     assert calc.display == "123,456,789,012,345."
+
+
+# A trailing ".0" is trimmed from *committed* values ("200 + 20.0" reads
+# "200 + 20"), but an operand still being typed must show every key pressed.
+# Before 1.1.1, typing 10.05 displayed "10." -> "10" -> "10.05", so the
+# decimal point appeared to vanish half-way through entering an amount.
+@pytest.mark.parametrize(
+    ("presses", "display"),
+    [
+        ("0.0", "0.0"),
+        ("0.05", "0.05"),
+        ("10.0", "10.0"),
+        ("10.05", "10.05"),
+        ("1000.0", "1,000.0"),
+        ("1000.00", "1,000.00"),
+        ("1234567.0", "1,234,567.0"),
+    ],
+)
+def test_entry_keeps_typed_decimal_zeros(presses, display):
+    for index in range(1, len(presses) + 1):
+        calc = press(Calculator(), *d(presses[:index]))
+        # Every intermediate state shows exactly what has been typed so far.
+        assert calc.display.replace(",", "") == presses[:index]
+        assert calc.expression_text.replace(",", "") == presses[:index]
+    assert calc.display == display
+
+
+def test_entry_decimal_zero_survives_sign_backspace_and_commit():
+    calc = press(Calculator(), *d("1000.0"), "+/-")
+    assert calc.display == "−1,000.0"
+    press(calc, "back")
+    assert calc.display == "−1,000."
+    press(calc, "back")
+    assert calc.display == "−1,000"
+    press(calc, "back")
+    assert calc.display == "−100", "backspace removes a digit, never a separator"
+    press(calc, "AC", *d("10.0"), "+", *d("0.05"))
+    assert calc.expression_text == "10 + 0.05", "a committed 10.0 may read as 10"
+    assert calc.preview().text == "10.05"
