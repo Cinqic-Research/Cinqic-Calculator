@@ -34,6 +34,11 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Write release notes from CHANGELOG.md
+        # First, so a tag that does not match the source version (or has no
+        # CHANGELOG.md section) fails before a long build, not after it.
+        run: python scripts/release_notes.py android "${{ github.ref_name }}" "${{ github.repository }}" "$RUNNER_TEMP/release-notes.md"
+
       - name: Set up JDK
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
         with:
@@ -185,48 +190,4 @@ jobs:
           files: |
             Cinqic-Calculator-Android.apk
             SHA256SUMS-Android.txt
-          body: |
-            ## Cinqic Calculator for Android ${{ github.ref_name }}
-
-            A private, offline calculator for Android. Standard and
-            scientific math, unit conversion, financial tools, and local
-            history and settings -- no account, no ads, and no internet
-            permission.
-
-            **Package:** `com.cinqic.calculator`
-
-            ### What's new
-            - **Live answers.** The full expression stays on screen and the
-              result appears as you type, before you press `=`.
-            - **A tactile keypad.** Keys respond with a short spring press
-              and new digits animate into the display. A reduced-motion
-              setting turns the movement off while keeping instant feedback.
-            - **Redesigned scientific mode**, now a grouped sheet that slides
-              up over the keypad instead of an endless vertical grid.
-            - **A simpler layout** -- one keypad with `=` in it, backspace
-              beside the display, and memory moved into the scientific sheet.
-            - **More maths:** parentheses, `x^y`, `Ans`, exponentials, and
-              inverse trigonometry.
-            - **Optional haptics**, using Android's built-in key-press
-              feedback -- still no permissions requested.
-            - Now licensed under **Apache License 2.0**.
-
-            ### Privacy
-            Works fully offline. No account, telemetry, analytics, or ads.
-            See [PRIVACY.md](https://github.com/${{ github.repository }}/blob/main/PRIVACY.md).
-
-            ### Juniper
-            Juniper is not integrated into Cinqic Calculator. The calculator
-            works fully without AI.
-
-            ### Install
-            This is a direct APK download, not a Play Store listing.
-            Download `Cinqic-Calculator-Android.apk`, then allow "install
-            unknown apps" for your browser or file manager when prompted.
-
-            ### Verify your download
-            Checksum: `SHA256SUMS-Android.txt` in this release.
-            Signing certificate fingerprint: printed in this workflow's
-            "Verify the release signature" step log.
-
-            Source: https://github.com/${{ github.repository }}
+          body_path: ${{ runner.temp }}/release-notes.md

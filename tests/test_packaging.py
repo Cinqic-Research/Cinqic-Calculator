@@ -134,3 +134,50 @@ def test_no_stale_mit_references_remain():
             if re.search(r"\bMIT\b", line):
                 offenders.append(f"{path.relative_to(REPO_ROOT)}:{number}: {line.strip()}")
     assert not offenders, "stale MIT references:\n" + "\n".join(offenders)
+
+
+# ---------------------------------------------------------------------------
+# Release notes
+# ---------------------------------------------------------------------------
+def _release_notes():
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("release_notes", REPO_ROOT / "scripts" / "release_notes.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _fake_tree(tmp_path, version="2.0.0", android_version="2.0.0", changelog="## 2.0.0 - 2026-01-02\n\n### Fixed\n\n- A fix.\n\n## 1.0.0\n\n- Old.\n"):
+    (tmp_path / "src" / "cinqic_calculator").mkdir(parents=True)
+    (tmp_path / "src" / "cinqic_calculator" / "constants.py").write_text(f'APP_VERSION = "{version}"\n', encoding="utf-8")
+    (tmp_path / "android").mkdir()
+    (tmp_path / "android" / "android_constants.py").write_text(f'ANDROID_APP_VERSION = "{android_version}"\n', encoding="utf-8")
+    (tmp_path / "CHANGELOG.md").write_text(changelog, encoding="utf-8")
+    return tmp_path
+
+
+@pytest.mark.parametrize(("platform", "tag"), [("desktop", "v2.0.0"), ("android", "android-v2.0.0")])
+def test_release_notes_come_from_the_tagged_changelog_section(tmp_path, platform, tag):
+    notes = _release_notes().build_notes(platform, tag, "Owner/Repo", _fake_tree(tmp_path))
+    assert f"Cinqic Calculator{' for Android' if platform == 'android' else ''} {tag}" in notes
+    assert "#### Fixed\n\n- A fix." in notes
+    assert "Old." not in notes, "only the tagged version's section"
+    assert "https://github.com/Owner/Repo/blob/main/PRIVACY.md" in notes
+
+
+@pytest.mark.parametrize(
+    ("platform", "tag", "tree", "message"),
+    [
+        ("desktop", "v2.0.1", {}, "source tree is version 2.0.0"),
+        ("desktop", "android-v2.0.0", {}, "not a desktop release tag"),
+        ("android", "v2.0.0", {}, "not a android release tag"),
+        ("android", "android-v2.0.0", {"android_version": "1.9.0"}, "source tree is version 1.9.0"),
+        ("desktop", "v2.0.0", {"changelog": "## Unreleased\n\n- Pending.\n"}, "no '## 2.0.0' section"),
+        ("desktop", "v2.0.0", {"changelog": "## 2.0.0\n\n## 1.0.0\n- Old.\n"}, "is empty"),
+    ],
+)
+def test_release_notes_refuse_a_mismatched_tag_or_missing_section(tmp_path, platform, tag, tree, message):
+    module = _release_notes()
+    with pytest.raises(module.ReleaseNotesError, match=re.escape(message)):
+        module.build_notes(platform, tag, "Owner/Repo", _fake_tree(tmp_path, **tree))
