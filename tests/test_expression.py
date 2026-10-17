@@ -14,6 +14,7 @@ from cinqic_calculator.expression import (
     ExpressionModel,
     PreviewState,
     format_number,
+    group_digits,
     tidy_literal,
 )
 
@@ -335,3 +336,21 @@ def test_grouped_expressions_compile_to_ungrouped_arithmetic():
 )
 def test_grouping_preserves_fractional_digits_and_exponents(text, expected):
     assert tidy_literal(text) == expected
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("10.0", "10.0"),
+        ("1000.0", "1,000.0"),
+        ("-0.0", "−0.0"),
+        ("-123", "−123"),
+        ("-1234", "−1,234"),
+        ("123456", "123,456"),
+        ("-", "−"),
+        ("0.", "0."),
+        ("1.5e-7", "1.5e-7"),
+    ],
+)
+def test_group_digits_never_trims_what_was_typed(text, expected):
+    assert group_digits(text) == expected

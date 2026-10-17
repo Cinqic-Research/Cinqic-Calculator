@@ -19,6 +19,16 @@ account, a cloud service, or an internet connection.
 **Juniper is not integrated into Cinqic Calculator. The calculator works fully
 without AI.** See [About Juniper](#juniper-relationship) below.
 
+## What's new in 1.1.1
+
+- **Thousands separators.** Entered numbers, expressions, live answers,
+  results, and history read `1,234.56` instead of `1234.56`. Copied values,
+  history, and memory still hold the plain number.
+- **Exact differences.** `1500.37 − 1500.36` shows `0.01`, not
+  `0.00999999999999` — the over/short line of a cash count reads correctly.
+- **Steadier entry and paste.** A typed `10.0` no longer flashes back to `10`,
+  and pasting keeps the `−` sign and scientific notation.
+
 ## What's new in 1.1.0
 
 - **Live answers.** The expression you are building stays on screen and its

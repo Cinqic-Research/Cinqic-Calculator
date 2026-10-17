@@ -167,6 +167,11 @@ jobs:
         working-directory: staging
         run: sha256sum -c SHA256SUMS.txt
 
+      - name: Write release notes from CHANGELOG.md
+        # Fails, so nothing is published, if the tag does not match the
+        # version in the source tree or CHANGELOG.md has no section for it.
+        run: python scripts/release_notes.py desktop "${{ github.ref_name }}" "${{ github.repository }}" release-notes.md
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
@@ -175,46 +180,4 @@ jobs:
             staging/Cinqic-Calculator-Windows-x64-Portable.zip
             staging/Cinqic-Calculator-Linux-x86_64.tar.gz
             staging/SHA256SUMS.txt
-          body: |
-            ## Cinqic Calculator ${{ github.ref_name }}
-
-            A private, offline calculator for Windows and Linux.
-
-            ### What's new
-            - **Live answers.** The full expression stays on screen and the
-              result appears as you type, before you press `=`.
-            - **Redesigned keypad** with a clearer layout, an active-operator
-              indicator, and a clear key that says what it will do.
-            - **Redesigned scientific mode**, grouped by purpose, with
-              parentheses, `x^y`, `Ans`, exponentials, and inverse
-              trigonometry.
-            - **Linux is now a supported platform**, tested in CI and shipped
-              as a standalone tarball.
-            - Now licensed under **Apache License 2.0**.
-
-            ### Install on Windows
-            Download `Cinqic-Calculator-Windows-x64-Setup.exe` and run it (no
-            administrator privileges required). A portable ZIP is also
-            available if you'd rather not install anything.
-
-            ### Install on Linux
-            Download `Cinqic-Calculator-Linux-x86_64.tar.gz`, extract it, and
-            run `./CinqicCalculator/cinqic-calculator`. The bundle is
-            self-contained -- no Python or Tk installation required.
-
-            ### Privacy
-            Works fully offline. No account, telemetry, or ads. See
-            [PRIVACY.md](https://github.com/${{ github.repository }}/blob/main/PRIVACY.md).
-
-            ### Known limitations
-            These builds are not code-signed. Windows SmartScreen may show an
-            unfamiliar-app warning on first run - this is expected for an
-            unsigned open-source build.
-
-            Juniper is not integrated into this release; the calculator works
-            fully without AI.
-
-            ### Verify your download
-            Checksums for every asset are in `SHA256SUMS.txt`.
-
-            Source: https://github.com/${{ github.repository }}
+          body_path: release-notes.md

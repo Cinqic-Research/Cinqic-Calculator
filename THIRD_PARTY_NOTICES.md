@@ -51,6 +51,7 @@ redistributed as part of it.
 | [Ruff](https://docs.astral.sh/ruff/) | MIT |
 | [PyInstaller](https://pyinstaller.org/) | GPL-2.0-or-later with bootloader exception |
 | [Buildozer](https://github.com/kivy/buildozer) | MIT |
+| [Cython](https://cython.org/) | Apache-2.0 |
 | [Inno Setup](https://jrsoftware.org/isinfo.php) | Inno Setup License (BSD-style) |
 
 ## Assets

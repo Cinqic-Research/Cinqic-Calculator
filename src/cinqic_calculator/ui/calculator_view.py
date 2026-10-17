@@ -7,10 +7,11 @@ function and cannot disturb the calculation in progress.
 """
 
 import datetime
+import math
 import tkinter as tk
 from tkinter import font as tkfont
 
-from ..calculator import Calculator
+from ..calculator import Calculator, parse_number_text
 from ..expression import PreviewState
 from .components import ToolTip, make_button, section_label, set_button_active
 
@@ -60,7 +61,12 @@ class CalculatorView(tk.Frame):
         if self.settings.get("persist_memory", False):
             stored_memory = self.settings.get("memory_value")
             if isinstance(stored_memory, (int, float)) and not isinstance(stored_memory, bool):
-                self.calc.memory = float(stored_memory)
+                try:
+                    value = float(stored_memory)
+                except OverflowError:  # a huge integer in a hand-edited settings.json
+                    value = math.inf
+                if math.isfinite(value):
+                    self.calc.memory = value
 
         self._build()
         self.bind_all_keys()
@@ -411,14 +417,10 @@ class CalculatorView(tk.Frame):
             text = self.clipboard_get().strip()
         except tk.TclError:
             return
-        cleaned = "".join(ch for ch in text if ch.isdigit() or ch in ".-")
-        if not cleaned:
+        value = parse_number_text(text)
+        if value is None or not self.calc.load_value(value):
+            self.on_status("Clipboard does not hold a single number")
             return
-        try:
-            value = float(cleaned)
-        except ValueError:
-            return
-        self.calc.load_value(value)
         self._refresh()
         self.on_status("Value pasted")
 
@@ -427,8 +429,8 @@ class CalculatorView(tk.Frame):
             value = float(str(result_text).replace("−", "-"))
         except (TypeError, ValueError):
             return
-        self.calc.load_value(value)
-        self._refresh()
+        if self.calc.load_value(value):
+            self._refresh()
 
     # ------------------------------------------------------------------
     # Keyboard

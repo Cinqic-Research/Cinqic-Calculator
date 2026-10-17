@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cinqic-calculator"
-version = "1.1.0"
+version = "1.1.1"
 description = "A private, offline-first calculator for Windows, Linux, and Android."
 readme = "README.md"
 license = "Apache-2.0"

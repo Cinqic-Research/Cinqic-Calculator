@@ -167,3 +167,58 @@ def test_negative_base_with_a_fractional_exponent_is_a_domain_error():
     with pytest.raises(EvaluationError) as info:
         evaluate("(-8) ** 0.5")
     assert info.value.code == ErrorCode.DOMAIN
+
+
+# ---------------------------------------------------------------------------
+# 1.1.1: sums and differences of decimal amounts come out exact
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    ("expression", "shown"),
+    [
+        # Closing a cash drawer: counted minus expected, a cent apart. These
+        # displayed as 0.00999999999999 and 0.0100000000001 before 1.1.1.
+        ("1500.37 - 1500.36", "0.01"),
+        ("1234.56 - 1234.55", "0.01"),
+        ("981.07 - 981.06", "0.01"),
+        ("1234567.89 - 1234567.88", "0.01"),
+        ("8085.1 - 8084.23", "0.87"),
+        ("-1500.37 + 1500.36", "-0.01"),
+        ("200.10 - 200", "0.1"),
+        ("0.1 + 0.2", "0.3"),
+    ],
+)
+def test_near_cancellation_shows_the_exact_decimal_difference(expression, shown):
+    from cinqic_calculator.expression import format_number
+
+    assert format_number(evaluate(expression)) == shown
+
+
+def test_cent_amount_sums_and_differences_match_decimal_arithmetic():
+    """Randomised cross-check against exact Decimal arithmetic.
+
+    Pairs are drawn both independently and a few cents apart (the over/short
+    case), up to 99,999,999.99 -- every result must display exactly.
+    """
+    import random
+    from decimal import Decimal
+
+    from cinqic_calculator.expression import format_number
+
+    rng = random.Random(20261016)
+    for _ in range(20000):
+        a = rng.randint(0, 9_999_999_999)
+        b = a + rng.randint(-500, 500) if rng.random() < 0.5 else rng.randint(0, 9_999_999_999)
+        b = abs(b)
+        left, right = Decimal(a) / 100, Decimal(b) / 100
+        for op, exact in (("+", left + right), ("-", left - right)):
+            source = f"{left} {op} {right}"
+            assert Decimal(format_number(evaluate(source))) == exact, source
+
+
+def test_sum_rounding_leaves_integers_overflow_and_tiny_values_alone():
+    assert evaluate("123456789012345 - 1") == 123456789012344
+    assert evaluate("1e-320 + 1e-320") == 2e-320
+    assert evaluate("123456.789 + 0.000000001") == 123456.789000001
+    with pytest.raises(EvaluationError) as info:
+        evaluate("1e308 * 10 - 1")
+    assert info.value.code == ErrorCode.OVERFLOW

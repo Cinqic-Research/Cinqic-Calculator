@@ -7,7 +7,7 @@ happen to hold them.
 
 import pytest
 
-from cinqic_calculator.calculator import Calculator
+from cinqic_calculator.calculator import Calculator, parse_number_text
 from cinqic_calculator.evaluator import ErrorCode
 from cinqic_calculator.expression import PreviewState
 
@@ -571,3 +571,175 @@ def test_grouping_does_not_round_long_entries():
     assert calc.plain_display == "123456789012345"
     calc.input_decimal()
     assert calc.display == "123,456,789,012,345."
+
+
+# A trailing ".0" is trimmed from *committed* values ("200 + 20.0" reads
+# "200 + 20"), but an operand still being typed must show every key pressed.
+# Before 1.1.1, typing 10.05 displayed "10." -> "10" -> "10.05", so the
+# decimal point appeared to vanish half-way through entering an amount.
+@pytest.mark.parametrize(
+    ("presses", "display"),
+    [
+        ("0.0", "0.0"),
+        ("0.05", "0.05"),
+        ("10.0", "10.0"),
+        ("10.05", "10.05"),
+        ("1000.0", "1,000.0"),
+        ("1000.00", "1,000.00"),
+        ("1234567.0", "1,234,567.0"),
+    ],
+)
+def test_entry_keeps_typed_decimal_zeros(presses, display):
+    for index in range(1, len(presses) + 1):
+        calc = press(Calculator(), *d(presses[:index]))
+        # Every intermediate state shows exactly what has been typed so far.
+        assert calc.display.replace(",", "") == presses[:index]
+        assert calc.expression_text.replace(",", "") == presses[:index]
+    assert calc.display == display
+
+
+def test_entry_decimal_zero_survives_sign_backspace_and_commit():
+    calc = press(Calculator(), *d("1000.0"), "+/-")
+    assert calc.display == "−1,000.0"
+    press(calc, "back")
+    assert calc.display == "−1,000."
+    press(calc, "back")
+    assert calc.display == "−1,000"
+    press(calc, "back")
+    assert calc.display == "−100", "backspace removes a digit, never a separator"
+    press(calc, "AC", *d("10.0"), "+", *d("0.05"))
+    assert calc.expression_text == "10 + 0.05", "a committed 10.0 may read as 10"
+    assert calc.preview().text == "10.05"
+
+
+# ---------------------------------------------------------------------------
+# Closing a cash drawer: the workflow the 1.1.1 release was audited against
+# ---------------------------------------------------------------------------
+_DRAWER = (("20", "37"), ("10", "12"), ("5", "8"), ("1", "63"), ("0.25", "40"), (".10", "58"), ("0.05", "22"), ("0.01", "117"))
+
+
+def _type_drawer_count(calc):
+    for index, (denomination, count) in enumerate(_DRAWER):
+        if index:
+            press(calc, "+")
+        press(calc, *d(denomination), "*", *d(count))
+    return calc
+
+
+def test_cash_drawer_count_total_float_and_copy():
+    calc = _type_drawer_count(Calculator())
+    assert calc.expression_text == (
+        "20 × 37 + 10 × 12 + 5 × 8 + 1 × 63 + 0.25 × 40 + 0.10 × 58 + 0.05 × 22 + 0.01 × 117"
+    )
+    assert calc.preview().text == "981.07"
+    press(calc, "=")
+    assert calc.display == "981.07"
+    assert calc.plain_display == "981.07", "the copied total"
+    # Take out a 200 opening float, then the same again with repeated "=".
+    press(calc, "-", *d("200"), "=")
+    assert (calc.expression_text, calc.display) == ("981.07 − 200 =", "781.07")
+    press(calc, "=")
+    assert (calc.expression_text, calc.display) == ("781.07 − 200 =", "581.07")
+
+
+def test_cash_drawer_large_total_is_grouped_but_copied_plain():
+    calc = press(Calculator(), *d("1234.56"))
+    for _ in range(9):
+        press(calc, "+", *d("1234.56"))
+    assert calc.preview().text == "12,345.6"
+    press(calc, "=", "-", *d("12345.59"), "=")
+    assert calc.display == "0.01"
+    press(calc, "AC", *d("12345.6"), "-", *d("12345.61"), "=")
+    assert (calc.display, calc.plain_display) == ("−0.01", "-0.01")
+
+
+def test_cash_drawer_memory_accumulation_matches_the_one_line_total():
+    calc = Calculator()
+    for denomination, count in _DRAWER:
+        press(calc, *d(denomination), "*", *d(count), "=")
+        calc.memory_add()
+    press(calc, "AC")
+    calc.memory_recall()
+    assert calc.display == "981.07"
+    press(calc, "-", *d("981.06"), "=")
+    assert calc.display == "0.01", "over/short must not show 0.0100000000001"
+
+
+# ---------------------------------------------------------------------------
+# Pasting text that contains a grouped number
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    ("text", "value"),
+    [
+        ("1,234.56", 1234.56),
+        ("-1,234.56", -1234.56),
+        ("−1,234.56", -1234.56),  # the minus this app displays
+        ("1.23456789012e14", 1.23456789012e14),  # this app's own copied output
+        ("1.5e-7", 1.5e-7),
+        ("1,000.", 1000.0),
+        (".5", 0.5),
+        ("  981.07\n", 981.07),
+        ("Total: $1,234.56", 1234.56),
+        ("-$1,234.56", -1234.56),
+        ("(1,234.56)", -1234.56),
+        ("123456789012345", 123456789012345.0),
+    ],
+)
+def test_pasted_numbers_parse_exactly(text, value):
+    assert parse_number_text(text) == value
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "",
+        "abc",
+        "2026-10-16",  # three numbers, not one negative one
+        "1 234,56",  # decimal-comma locale: refuse rather than read 123456
+        "12,34",  # not a thousands grouping
+        "1234,567",
+        "1.2.3",
+        "5-",  # a minus outside the number must never be dropped
+        "-(5)",
+        "1e400",
+        "9" * 400,
+        "١٢٣",  # non-ASCII digits
+    ],
+)
+def test_ambiguous_or_unrepresentable_paste_is_refused(text):
+    assert parse_number_text(text) is None
+
+
+def test_paste_round_trips_every_copied_result():
+    for presses in (("1234.5", "+", "2000"), ("1", "-", "1234567.89"), ("1", "/", "3"), ("12345678", "*", "1234567")):
+        calc = Calculator()
+        for chunk in presses:
+            press(calc, *(d(chunk) if chunk[0].isdigit() else (chunk,)))
+        press(calc, "=")
+        copied = calc.plain_display
+        assert parse_number_text(calc.display) == parse_number_text(copied) == float(copied)
+        reloaded = Calculator()
+        assert reloaded.load_value(parse_number_text(copied))
+        assert reloaded.display == calc.display
+
+
+# ---------------------------------------------------------------------------
+# Values that cannot be displayed must not escape as exceptions
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize("value", [float("inf"), float("-inf"), float("nan")])
+def test_load_value_refuses_non_finite_values(value):
+    calc = press(Calculator(), *d("42"))
+    assert calc.load_value(value) is False
+    assert calc.display == "42"
+
+
+def test_memory_overflow_reports_an_error_instead_of_storing_infinity():
+    calc = Calculator()
+    calc.load_value(1.7e308)
+    calc.memory_store()
+    calc.memory_add()
+    assert calc.memory == 1.7e308, "memory keeps its last good value"
+    assert calc.has_error and calc.error_code == ErrorCode.OVERFLOW
+    calc.clear_all()
+    calc.memory_recall()
+    assert calc.display == "1.7e308"

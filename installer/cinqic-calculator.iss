@@ -3,7 +3,7 @@
 ; onedir output in dist\CinqicCalculator.
 
 #define MyAppName "Cinqic Calculator"
-#define MyAppVersion "1.1.0"
+#define MyAppVersion "1.1.1"
 #define MyAppPublisher "Cinqic"
 #define MyAppURL "https://cinqic.com"
 #define MyAppExeName "CinqicCalculator.exe"

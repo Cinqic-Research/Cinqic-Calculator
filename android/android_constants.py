@@ -10,8 +10,8 @@ Since 1.1.0 the two platforms share a single product version number, so
 a test asserts they do not silently drift apart.
 """
 
-ANDROID_APP_VERSION = "1.1.0"
-ANDROID_VERSION_CODE = 2
+ANDROID_APP_VERSION = "1.1.1"
+ANDROID_VERSION_CODE = 3
 
 PRIVACY_SUMMARY = (
     "Cinqic Calculator works fully offline. There is no account, no ads, "

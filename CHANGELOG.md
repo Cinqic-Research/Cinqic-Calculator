@@ -7,13 +7,45 @@ From 1.1.0 onwards, all platforms share one product version. Desktop releases
 separately and tagged `android-vX.Y.Z`. Before 1.1.0, Windows and Android were
 versioned independently.
 
-## Unreleased
+## 1.1.1 - 2026-10-16
+
+### Readability
 
 - Added comma thousands separators to entered numbers, expressions, live
   previews, results, and history results on desktop and Android. For example,
   `1234.56` is displayed as `1,234.56`. Fractional digits and scientific
   notation stay intact; calculations, copied values, stored history results,
   and calculator memory continue using ungrouped numeric values.
+- An amount being typed now shows every key pressed. Typing `10.05` used to
+  display `10.` then `10` then `10.05`, so the decimal point seemed to vanish
+  half-way through; `1,000.0` likewise read `1,000`.
+- The desktop history's Result column widens to fit its longest result, so a
+  long grouped number is never cut off into a different-looking one.
+
+### Exact results
+
+- Subtracting two nearly equal amounts now shows the exact difference.
+  `1500.37 − 1500.36` displayed `0.00999999999999`, and `981.07 − 981.06`
+  displayed `0.0100000000001`, because binary floating-point error became
+  visible digits. Sums and differences are now rounded to the precision their
+  operands actually carry.
+
+### Paste and stored values
+
+- Desktop paste now reads one number exactly, including the grouping, the
+  `−` sign this app displays, and scientific notation. It used to drop the
+  `−` (pasting `−1,234.56` gave `1,234.56`) and the `e` of an exponent
+  (pasting the app's own copied `1.23456789012e14` gave `1.2345678901214`).
+  Text holding more than one number, or separators that are not thousands
+  groups, is now refused and leaves the calculator unchanged.
+- An infinite or invalid value in a hand-edited history or settings file, or
+  a memory sum that overflows, is now refused or reported as "Number too
+  large" instead of raising an error out of the interface.
+
+### Release process
+
+- Release notes are now taken from this changelog, and a release fails before
+  publishing if its tag does not match the version in the source tree.
 
 ## 1.1.0
 

@@ -34,14 +34,14 @@ source.include_exts = py,kv,png,jpg,atlas
 # ANDROID app's own version, tracked independently of the desktop app's
 # cinqic_calculator.constants.APP_VERSION (that constant
 # is shared with the desktop UI and must not be reused here).
-version = 1.1.0
+version = 1.1.1
 
 # (int) Application versionCode - the Play Store / package manager's
 # machine-readable, monotonically increasing build counter. This is the
 # buildozer.spec key for what Android calls versionCode; if omitted,
 # buildozer derives one from `version` above instead, so it is set
 # explicitly here to keep it independent and predictable.
-android.numeric_version = 2
+android.numeric_version = 3
 
 # (list) Application requirements
 # Kept minimal on purpose: cinqic_calculator (bundled per the note above)

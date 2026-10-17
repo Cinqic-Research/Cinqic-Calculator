@@ -14,6 +14,7 @@ a screen's ``.py``/``.kv`` file, precisely so it can be tested this way.
 from __future__ import annotations
 
 import datetime as _datetime
+import math
 
 from cinqic_calculator import constants
 from cinqic_calculator.calculator import Calculator
@@ -74,7 +75,13 @@ def restore_persisted_memory(calculator: Calculator, settings: Settings) -> None
         return
     stored = settings.get("memory_value")
     if isinstance(stored, (int, float)) and not isinstance(stored, bool):
-        calculator.memory = float(stored)
+        # JSON allows Infinity/NaN and huge integers; none is a usable memory.
+        try:
+            value = float(stored)
+        except OverflowError:
+            return
+        if math.isfinite(value):
+            calculator.memory = value
 
 
 def persist_memory_value(calculator: Calculator, settings: Settings) -> None:
@@ -127,8 +134,9 @@ def load_history_result(calculator, result_text: str) -> bool:
         value = float(str(result_text).replace("\u2212", "-"))
     except (TypeError, ValueError):
         return False
-    calculator.load_value(value)
-    return True
+    # load_value refuses inf/NaN ("1e999" in an edited file), which would
+    # otherwise raise out of the history screen's button handler.
+    return calculator.load_value(value)
 
 
 class ScreenInputRouter:
