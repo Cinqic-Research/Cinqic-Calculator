@@ -417,6 +417,7 @@ def test_grouped_result_copy_history_and_reuse(app_window):
 )
 def test_paste_keeps_sign_and_exponent(app_window, clipboard, display):
     app_window.show_view("Calculator")
+    app_window.update()  # the paste shortcut only acts on a mapped view
     view = app_window.views["Calculator"]
     view.calc.clear_all()
     view.clipboard_clear()
@@ -428,6 +429,7 @@ def test_paste_keeps_sign_and_exponent(app_window, clipboard, display):
 
 def test_ambiguous_paste_leaves_the_calculator_unchanged(app_window):
     app_window.show_view("Calculator")
+    app_window.update()
     view = app_window.views["Calculator"]
     view.calc.clear_all()
     view._on_key("7")
@@ -435,6 +437,7 @@ def test_ambiguous_paste_leaves_the_calculator_unchanged(app_window):
     view.clipboard_append("2026-10-16")
     app_window._paste_shortcut()
     app_window.update()
+    assert app_window.status_var.get() == "Clipboard does not hold a single number"
     assert view.display_var.get() == "7"
 
 
