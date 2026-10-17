@@ -436,3 +436,40 @@ def test_ambiguous_paste_leaves_the_calculator_unchanged(app_window):
     app_window._paste_shortcut()
     app_window.update()
     assert view.display_var.get() == "7"
+
+
+def test_long_grouped_history_results_are_not_clipped(app_window):
+    from tkinter import font as tkfont
+
+    app_window.history.clear()
+    app_window.history.add("big", "-123456789012", "2026-10-16T09:00:00")
+    app_window.history.add("tiny", "-1.23456789012e-100", "2026-10-16T09:00:01")
+    app_window.show_view("History")
+    history_view = app_window.views["History"]
+    app_window.update()
+    font = tkfont.nametofont("TkDefaultFont")
+    for text in ("−123,456,789,012", "−1.23456789012e-100"):
+        assert history_view.tree.column("result", "width") >= font.measure(text)
+    app_window.history.clear()
+    history_view.refresh()
+
+
+def test_widest_grouped_entry_fits_the_display(app_window):
+    """15 digits, a decimal point, separators and a sign at the minimum window size."""
+    from tkinter import font as tkfont
+
+    app_window.geometry("640x700")
+    app_window.show_view("Calculator")
+    view = app_window.views["Calculator"]
+    view.calc.clear_all()
+    for key in "1234567890123.45":
+        view._on_key(key)
+    view._on_key("±")
+    app_window.update()
+    text = view.display_var.get()
+    assert text == "−1,234,567,890,123.45"
+    font = tkfont.Font(font=view.display_label.cget("font"))
+    assert font.measure(text) <= view.display_label.winfo_width()
+    view.calc.clear_all()
+    app_window.geometry("900x800")
+    app_window.update()

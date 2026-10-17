@@ -1,10 +1,14 @@
 """Local calculation history view."""
 
 import tkinter as tk
+from tkinter import font as tkfont
 from tkinter import messagebox, ttk
 
 from ..expression import tidy_literal
 from .components import make_button, section_label
+
+_RESULT_MIN_WIDTH = 100
+_CELL_PADDING = 16
 
 
 class HistoryView(tk.Frame):
@@ -60,10 +64,31 @@ class HistoryView(tk.Frame):
         order rows are displayed in.
         """
         self.tree.delete(*self.tree.get_children())
+        shown_results = []
         for index in reversed(range(len(self.history.entries))):
             entry = self.history.entries[index]
             values = (entry["expression"], tidy_literal(entry["result"]), entry["timestamp"])
+            shown_results.append(values[1])
             self.tree.insert("", "end", iid=str(index), values=values)
+        self._fit_result_column(shown_results)
+
+    def _fit_result_column(self, texts):
+        """Widen the Result column so no result is clipped.
+
+        A Treeview cuts text off at the column edge without an ellipsis, so a
+        grouped "−123,456,789,012" in a fixed 100px column could read as
+        "−123,456,789,0" -- a different number. The column is sized to the
+        widest result instead, and its minimum width keeps a narrow window
+        from squeezing it back.
+        """
+        font_spec = ttk.Style(self).lookup("Cinqic.Treeview", "font") or "TkDefaultFont"
+        try:
+            font = tkfont.nametofont(font_spec)
+        except tk.TclError:
+            font = tkfont.Font(font=font_spec)
+        widest = max((font.measure(text) for text in texts), default=0)
+        width = max(_RESULT_MIN_WIDTH, widest + _CELL_PADDING)
+        self.tree.column("result", width=width, minwidth=width)
 
     def _selected_index(self):
         selection = self.tree.selection()
