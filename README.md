@@ -29,6 +29,19 @@ without AI.** See [About Juniper](#juniper-relationship) below.
 - **Steadier entry and paste.** A typed `10.0` no longer flashes back to `10`,
   and pasting keeps the `−` sign and scientific notation.
 
+## What's new in 1.1.1
+
+- **Grouped numbers.** Entered amounts, expressions, live previews, results and
+  history show thousands separators (`1,234.56`); arithmetic, copied values,
+  stored history and memory are unchanged.
+- **Exact small differences.** `1500.37 − 1500.36` now shows `0.01` instead of
+  `0.00999999999999`, the case that matters when closing a cash drawer.
+- Typing an amount shows every key pressed; pasted numbers with separators or a
+  leading minus are read correctly; very large or invalid values are refused
+  cleanly; the desktop history column fits its longest result.
+
+See [CHANGELOG.md](CHANGELOG.md) for the full list.
+
 ## What's new in 1.1.0
 
 - **Live answers.** The expression you are building stays on screen and its
@@ -85,7 +98,7 @@ contradict what you can see.
 ### Windows
 
 1. Download `Cinqic-Calculator-Windows-x64-Setup.exe` from the
-   [1.1.0 desktop release](https://github.com/Cinqic-Research/Cinqic-Calculator/releases/tag/v1.1.0).
+   [1.1.1 desktop release](https://github.com/Cinqic-Research/Cinqic-Calculator/releases/tag/v1.1.1).
 2. Run the installer. Administrator privileges are not required.
 3. Launch **Cinqic Calculator** from the Start menu.
 
@@ -101,7 +114,7 @@ unsigned open-source app; you can review the source yourself before continuing.
 ### Linux
 
 1. Download `Cinqic-Calculator-Linux-x86_64.tar.gz` from the
-   [1.1.0 desktop release](https://github.com/Cinqic-Research/Cinqic-Calculator/releases/tag/v1.1.0).
+   [1.1.1 desktop release](https://github.com/Cinqic-Research/Cinqic-Calculator/releases/tag/v1.1.1).
 2. Extract it and run the launcher:
 
 ```bash
@@ -125,7 +138,7 @@ package — `python3-tk` on Debian/Ubuntu, `python3-tkinter` on Fedora — becau
 ### Android
 
 Download `Cinqic-Calculator-Android.apk` from the
-[1.1.0 Android release](https://github.com/Cinqic-Research/Cinqic-Calculator/releases/tag/android-v1.1.0)
+[1.1.1 Android release](https://github.com/Cinqic-Research/Cinqic-Calculator/releases/tag/android-v1.1.1)
 and open it. Android will ask you to allow "install unknown apps" for whichever
 app you used to open the file — a normal requirement for any app installed
 outside the Play Store.
