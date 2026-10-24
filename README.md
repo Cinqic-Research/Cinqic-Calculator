@@ -21,24 +21,16 @@ without AI.** See [About Juniper](#juniper-relationship) below.
 
 ## What's new in 1.1.1
 
-- **Thousands separators.** Entered numbers, expressions, live answers,
-  results, and history read `1,234.56` instead of `1234.56`. Copied values,
-  history, and memory still hold the plain number.
+- **Thousands separators.** Entered numbers, expressions, live previews,
+  results, and history read `1,234.56` instead of `1234.56`. Arithmetic, copied
+  values, stored history, and memory still use the plain number.
 - **Exact differences.** `1500.37 − 1500.36` shows `0.01`, not
   `0.00999999999999` — the over/short line of a cash count reads correctly.
-- **Steadier entry and paste.** A typed `10.0` no longer flashes back to `10`,
-  and pasting keeps the `−` sign and scientific notation.
-
-## What's new in 1.1.1
-
-- **Grouped numbers.** Entered amounts, expressions, live previews, results and
-  history show thousands separators (`1,234.56`); arithmetic, copied values,
-  stored history and memory are unchanged.
-- **Exact small differences.** `1500.37 − 1500.36` now shows `0.01` instead of
-  `0.00999999999999`, the case that matters when closing a cash drawer.
-- Typing an amount shows every key pressed; pasted numbers with separators or a
-  leading minus are read correctly; very large or invalid values are refused
-  cleanly; the desktop history column fits its longest result.
+- **Steadier entry and paste.** Typing an amount shows every key pressed (a
+  typed `10.0` no longer flashes back to `10`), and desktop paste keeps the `−`
+  sign, grouping, and scientific notation.
+- Very large or invalid values are refused cleanly, and the desktop history
+  column fits its longest result.
 
 See [CHANGELOG.md](CHANGELOG.md) for the full list.
 
@@ -151,8 +143,8 @@ outside the Play Store.
 - Distributed as a direct, signed APK with a published SHA-256 checksum and
   signing certificate fingerprint — not through the Google Play Store.
 
-Verify any download against the `SHA256SUMS` file published with the same
-release.
+Verify desktop downloads against `SHA256SUMS.txt` from the desktop release and
+the APK against `SHA256SUMS-Android.txt` from the Android release.
 
 ## Privacy
 
